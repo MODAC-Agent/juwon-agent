@@ -16,6 +16,9 @@
 
 - 기본은 `strict`
 - `transitive`는 사용자가 명시하거나 high-risk target일 때만 사용
+- `strict`: changed production files 자체만 coverage 대상으로 둔다
+- `transitive`: changed file이 새로 직접 호출하는 내부 의존 파일까지 포함한다
+- 우선 target은 `analyze-changes.testTargets`, `code-review.testGaps.priority == required`, parsing / branching / async error path가 있는 파일 순서로 둔다
 
 ## production code 수정 규칙
 
@@ -26,7 +29,7 @@
 
 ## status 판정
 
-- gate 통과: `DONE`
-- gate 미달 + 정당한 예외 문서화: `DONE_WITH_CONCERNS`
+- 관련 테스트 통과 + 사용 가능한 coverage evidence가 gate 충족: `DONE`
+- 테스트 통과 + line-level diff coverage 계산 불가 또는 정당한 예외 문서화: `DONE_WITH_CONCERNS`
 - 러너/설정/coverage 부재: `BLOCKED`
 - 정책 충돌/범위 불명: `NEEDS_CONTEXT`

@@ -4,6 +4,8 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+const STATUS_SCHEMA_VERSION = "1.0";
+
 function parseArgs(argv: string[]) {
   const options: Record<string, string | boolean> = {};
 
@@ -61,12 +63,16 @@ if (isEntrypoint) {
     throw new Error("No JSON payload provided on stdin or via --payload-file.");
   }
 
-  const parsed = JSON.parse(raw);
+  const parsed = JSON.parse(raw) as Record<string, unknown>;
+  const payload = {
+    ...parsed,
+    schemaVersion: STATUS_SCHEMA_VERSION,
+  };
   const targetDir = path.dirname(filePath);
   const tempFile = `${filePath}.tmp-${process.pid}`;
 
   mkdirSync(targetDir, { recursive: true });
-  writeFileSync(tempFile, `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
+  writeFileSync(tempFile, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
   renameSync(tempFile, filePath);
 
   process.stdout.write(`${JSON.stringify({ ok: true, file: filePath }, null, 2)}\n`);

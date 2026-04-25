@@ -1,6 +1,6 @@
 ---
 name: review-pr-draft
-description: review 산출물을 PR 템플릿에 매핑해 게시 전 초안을 만든다. 실제 PR 생성은 하지 않는다.
+description: PR 초안 작성, PR 본문 정리, review-build 결과를 pull request 템플릿에 매핑할 때 사용. 실제 PR 생성 없이 pr-draft.md/json만 만든다.
 argument-hint: [scope] [--run-id=<runId>] [base-branch]
 allowed-tools: Read Edit Write Bash Glob Grep
 ---
@@ -9,7 +9,7 @@ allowed-tools: Read Edit Write Bash Glob Grep
 
 ## 목적
 
-`review-pr-draft`는 Week 1의 `create-pr`를 대체하지 않는다.
+`review-pr-draft`는 `create-pr`를 대체하지 않는다.
 이 skill은 review 결과를 PR 템플릿 구조에 맞춰 문서화하는 얇은 wrapper다.
 
 ## Step 1: 입력 확인
@@ -33,9 +33,7 @@ allowed-tools: Read Edit Write Bash Glob Grep
 
 세부 매핑은 아래 문서를 따른다.
 
-- 규칙: [review-pr-draft-rules.md](./review-pr-draft-rules.md)
 - 섹션 매핑: [references/template-mapping.md](./references/template-mapping.md)
-- 리스크 문구: [references/risk-language.md](./references/risk-language.md)
 
 ## Step 3: 산출물 작성
 
@@ -44,6 +42,12 @@ allowed-tools: Read Edit Write Bash Glob Grep
 - `docs/reviews/{scope}/{runId}/pr-draft.md`
 - `docs/reviews/{scope}/{runId}/pr-draft.json`
 - `docs/reviews/{scope}/{runId}/status/review-pr-draft.json`
+
+status 작성 전 아래 검증을 반드시 통과한다.
+
+```bash
+node --experimental-strip-types .claude/scripts/validate-contract.ts --phase=review-pr-draft --review-dir=docs/reviews/{scope}/{runId}
+```
 
 ### pr-draft.json 필수 필드
 
@@ -60,7 +64,13 @@ allowed-tools: Read Edit Write Bash Glob Grep
 
 선택적으로 `sections` 필드를 덧붙여 섹션별 본문을 분리 저장할 수 있다. 자세한 규칙은 [references/template-mapping.md](./references/template-mapping.md).
 
-실제 PR 게시는 수행하지 않는다. 사용자가 승인하면 Week 1의 `create-pr`에 이 본문을 넘겨 게시한다.
+실제 PR 게시는 수행하지 않는다. 사용자가 승인하면 아래처럼 `create-pr`에 draft 파일을 넘겨 게시한다.
+
+```bash
+/create-pr --from-draft=docs/reviews/{scope}/{runId}/pr-draft.json
+```
+
+`create-pr`는 draft의 `title`, `body`, `baseRef`를 그대로 사용해야 하며, 이 단계의 review/coverage 정보를 git diff 기반으로 재작성하지 않는다.
 
 ## Completion Status
 

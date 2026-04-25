@@ -1,6 +1,6 @@
 ---
 name: test-unit
-description: change-summary와 review-report를 바탕으로 Vitest 테스트를 보강하고 coverage gate 결과를 정리한다.
+description: 테스트 보강, Vitest 실행, coverage 확인, 리뷰에서 발견한 테스트 공백을 채울 때 사용. change-summary.json과 review-report.json 기반으로 coverage-report.md/json을 만든다.
 argument-hint: [scope] [--run-id=<runId>] [--selection=strict|transitive] [--allow-prod-fix]
 allowed-tools: Read Edit Write Bash Glob Grep
 ---
@@ -9,8 +9,9 @@ allowed-tools: Read Edit Write Bash Glob Grep
 
 ## 목적
 
-`test-unit`은 Week 2에서 Vitest 전용으로 동작한다.
-대상 scope에 대해 differential 100% + scope 90% gate를 만족하는 테스트 계획과 결과를 남긴다.
+`test-unit`은 Vitest 전용으로 동작한다.
+대상 scope에 대해 관련 테스트와 coverage evidence를 남긴다.
+line-level diff coverage를 계산할 수 있는 근거가 있을 때만 differential 100% gate를 `DONE` 조건으로 사용한다.
 
 ## Step 1: 정책 확인과 stale 검사
 
@@ -52,7 +53,31 @@ allowed-tools: Read Edit Write Bash Glob Grep
 - 기본: `strict` — 변경된 파일 자체만 coverage 측정
 - 확장: `transitive` — 사용자가 명시하거나 change-summary의 riskAreas가 high-risk로 표시한 경우에만
 
-자세한 규칙은 [references/target-selection.md](./references/target-selection.md).
+우선 target은 `change-summary.testTargets`, `review-report.testGaps.priority == required`, parsing / branching / async error path가 있는 파일 순서로 잡는다.
+
+### coverage evidence
+
+`coverage-report.json`에는 coverage를 어떤 수준으로 증명했는지 반드시 남긴다.
+
+```json
+{
+  "scope": "...",
+  "runId": "...",
+  "testCommand": "pnpm exec vitest run ...",
+  "testStatus": "passed|failed|not-run",
+  "coverageEvidence": "line-diff|file-summary|not-available",
+  "coverageSummary": {
+    "differential": null,
+    "scope": null
+  },
+  "exceptions": [],
+  "unknowns": []
+}
+```
+
+- `line-diff`: diff line과 coverage hit 정보를 deterministic하게 연결함
+- `file-summary`: 파일 단위 coverage 리포트만 확인함
+- `not-available`: coverage를 실행하거나 해석할 수 없음
 
 ### production code 수정 규칙
 
@@ -76,6 +101,12 @@ production 수정이 필요하다고 판단되면:
 - `docs/reviews/{scope}/{runId}/coverage-report.json`
 - `docs/reviews/{scope}/{runId}/status/test-unit.json`
 
+status 작성 전 아래 검증을 반드시 통과한다.
+
+```bash
+node --experimental-strip-types .claude/scripts/validate-contract.ts --phase=test-unit --review-dir=docs/reviews/{scope}/{runId}
+```
+
 상세 규정은 아래 문서를 따른다.
 
 - 규칙: [test-unit-rules.md](./test-unit-rules.md)
@@ -84,7 +115,7 @@ production 수정이 필요하다고 판단되면:
 
 ## Completion Status
 
-- `DONE`: differential 100%와 scope 90%를 모두 만족
-- `DONE_WITH_CONCERNS`: gate 일부 미달이지만 정당한 예외(배럴/타입 전용/generated 등)를 `coverage-report.md`에 명시
+- `DONE`: 관련 테스트가 통과하고, 사용 가능한 coverage evidence가 gate를 만족
+- `DONE_WITH_CONCERNS`: 테스트는 통과했지만 line-level diff coverage를 계산할 수 없거나, gate 일부 미달이 정당한 예외로 문서화됨
 - `BLOCKED`: Vitest 환경 부재, coverage 측정 불가, prod fix 필요하지만 `--allow-prod-fix` 없음, 앞 phase stale
 - `NEEDS_CONTEXT`: 테스트 정책 문서 충돌, selection 범위 확정 불가, production 수정 후 Phase 1~2 재실행 응답 대기

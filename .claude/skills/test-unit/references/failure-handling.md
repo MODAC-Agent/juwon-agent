@@ -15,5 +15,6 @@
 
 ## `DONE_WITH_CONCERNS`
 
+- 관련 테스트는 통과했지만 line-level diff coverage를 deterministic하게 계산할 수 없음
 - differential은 통과했지만 scope가 예외 승인 없이는 조금 모자람
 - 측정 제외 파일이 많아 다음 phase에서 리뷰어 설명이 필요함
