@@ -6,8 +6,10 @@ import { fileURLToPath } from "node:url";
 import { assertAnalysisMode, collectGitMeta, type AnalysisMode } from "./git-meta.ts";
 
 const DEFAULT_MAX_AGE_HOURS = 24;
+const SUPPORTED_SCHEMA_VERSION = "1.0";
 
 type StatusFile = {
+  schemaVersion?: string;
   skill?: string;
   status?: string;
   analysisMode?: AnalysisMode;
@@ -71,6 +73,12 @@ if (isEntrypoint) {
   const current = collectGitMeta({ mode, baseRef });
   const reasons: string[] = [];
   const softReasons: string[] = [];
+
+  if (data.schemaVersion !== SUPPORTED_SCHEMA_VERSION) {
+    reasons.push(
+      `status schema version unsupported: stored=${data.schemaVersion ?? "missing"} supported=${SUPPORTED_SCHEMA_VERSION}`,
+    );
+  }
 
   if (data.analysisMode !== current.analysisMode) {
     reasons.push(

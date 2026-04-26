@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: change-summary를 바탕으로 findings-first 코드리뷰를 수행하고 review-report 계약 파일을 만든다.
+description: 코드 리뷰, PR 전 검토, 버그/회귀/테스트 공백 점검이 필요할 때 사용. change-summary.json 기반으로 findings-first review-report.md/json을 만든다.
 argument-hint: [scope] [--run-id=<runId>]
 allowed-tools: Read Edit Write Bash Glob Grep
 ---
@@ -29,8 +29,6 @@ allowed-tools: Read Edit Write Bash Glob Grep
 리뷰 관점과 심각도 기준은 아래 문서를 따른다.
 
 - 규칙: [code-review-rules.md](./code-review-rules.md)
-- 관점: [references/review-dimensions.md](./references/review-dimensions.md)
-- 심각도: [references/severity-levels.md](./references/severity-levels.md)
 
 ## Step 3: 산출물 작성
 
@@ -39,6 +37,12 @@ allowed-tools: Read Edit Write Bash Glob Grep
 - `docs/reviews/{scope}/{runId}/review-report.md`
 - `docs/reviews/{scope}/{runId}/review-report.json`
 - `docs/reviews/{scope}/{runId}/status/code-review.json`
+
+status 작성 전 아래 검증을 반드시 통과한다.
+
+```bash
+node --experimental-strip-types .claude/scripts/validate-contract.ts --phase=code-review --review-dir=docs/reviews/{scope}/{runId}
+```
 
 ### review-report.json 필수 구조
 
@@ -60,7 +64,8 @@ allowed-tools: Read Edit Write Bash Glob Grep
       "priority": "required|optional"
     }
   ],
-  "risksForPr": ["..."]
+  "risksForPr": ["..."],
+  "unknowns": ["..."]
 }
 ```
 

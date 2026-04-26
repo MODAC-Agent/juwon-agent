@@ -1,6 +1,6 @@
 ---
 name: figma-implement
-description: 추출된 Figma 스펙 파일(docs/specs/)을 참조하여 코드 구현. /figma-extract 완료 후 구현 시 사용.
+description: Figma 디자인 구현, 추출된 디자인 스펙을 React/Next.js 코드로 만들 때 사용. docs/specs/{feature}/를 읽어 UI를 구현하고 스펙-코드 차이를 보고한다.
 argument-hint: [feature-name]
 allowed-tools: Read Edit Write Bash Glob Grep Agent
 ---

@@ -1,25 +1,49 @@
 ---
 name: create-pr
-description: 현재 브랜치의 커밋 변경을 분석해 pr-template.md 기반의 PR 제목/본문 초안을 작성한다. 사용자 확인 후 PR을 생성한다. PR 준비, PR 본문 작성, 리뷰용 초안 생성 요청 시 사용.
-argument-hint: [base-branch]
+description: PR 생성, pull request 올리기, GitHub PR 게시, PR 본문/제목 최종 확인이 필요할 때 사용. 현재 브랜치 diff 또는 pr-draft.json으로 사용자 승인 후 gh pr create를 실행한다.
+argument-hint: [base-branch] [--from-draft=<pr-draft.json>]
 allowed-tools: Read Bash Glob Grep
 ---
 
-# PR 초안 생성
+# PR 생성
 
 ## 핵심 원칙
 
 - **사용자의 명시적 확인 없이 `gh pr create`를 실행하지 않는다**
 - 유형 판별, base branch, 검증 등에서 **사실과 추정을 반드시 구분**한다
 - 검증 항목은 실제 확인한 사실만 적고, 모르면 `미실행` 또는 `미확인`으로 둔다
-- 이 skill은 **working tree가 아니라 `base..HEAD` 커밋 범위만 분석**한다
-- 커밋되지 않은 변경은 PR 초안에 포함하지 않으며, warning으로만 표시한다
+- `--from-draft`가 있으면 draft 파일의 `title`, `body`, `baseRef`를 게시 입력으로 사용하고, 본문을 재작성하지 않는다
+- `--from-draft`가 없으면 **working tree가 아니라 `base..HEAD` 커밋 범위만 분석**한다
+- 커밋되지 않은 변경은 PR 본문에 포함하지 않으며, warning으로만 표시한다
 
 ---
 
 ## 실행 흐름
 
+### Step 0: review draft 입력 확인
+
+`--from-draft=<path>`가 있으면 이 skill은 PR 게시 wrapper로 동작한다.
+
+1. 지정된 `pr-draft.json`을 읽는다
+2. 필수 필드가 있는지 확인한다: `title`, `body`, `baseRef`
+3. `body`를 재구성하거나 git diff 기준으로 다시 작성하지 않는다
+4. working tree가 dirty이면 warning만 표시한다
+5. Step 5 형식으로 사용자에게 초안을 제시한 뒤 승인받으면 Step 6에서 PR을 생성한다
+
+`--from-draft` 모드에서 `base-branch` 인자가 함께 주어지면:
+
+- `base-branch`와 `pr-draft.json.baseRef`가 같으면 그대로 진행한다
+- 다르면 사용자 확인 없이는 진행하지 않고 `NEEDS_CONTEXT`로 멈춘다
+
+`pr-draft.json`은 보통 `review-pr-draft`가 만든 아래 파일이다.
+
+```text
+docs/reviews/{scope}/{runId}/pr-draft.json
+```
+
 ### Step 1: Base Branch 확정
+
+`--from-draft`가 없을 때만 수행한다.
 
 사용자 인자 `[base-branch]`가 있으면 그것을 사용한다. 없으면 아래 우선순위로 추정:
 
@@ -37,6 +61,8 @@ base branch는 항상 출력에 출처를 표시한다:
 - `main (user-specified)` 또는 `main (inferred)`
 
 ### Step 2: Git 컨텍스트 수집
+
+`--from-draft`가 없을 때만 수행한다.
 
 `scripts/collect-pr-context.sh`를 실행하여 브랜치 정보를 수집한다.
 
@@ -58,10 +84,14 @@ bash .claude/skills/create-pr/scripts/collect-pr-context.sh <base-branch>
 
 ### Step 3: PR 유형 판별
 
+`--from-draft`가 없을 때만 수행한다.
+
 변경 파일 경로를 기반으로 PR 유형을 자동 판별한다.
 판별 규칙은 [references/type-detection.md](./references/type-detection.md)를 따른다.
 
 ### Step 4: 템플릿 기반 초안 생성
+
+`--from-draft`가 없을 때만 수행한다.
 
 1. 프로젝트 루트의 `pr-template.md`를 읽는다
 2. [create-pr-rules.md](./create-pr-rules.md)의 섹션별 채우기 규칙에 따라 본문을 작성한다
@@ -110,6 +140,12 @@ PR 생성 시:
 gh pr create --base <base-branch> --title "<title>" --body "<body>"
 ```
 
+`--from-draft` 모드에서 같은 디렉토리의 `pr-draft.md`가 있으면 shell quoting 위험을 줄이기 위해 아래 형식을 우선 사용한다.
+
+```bash
+gh pr create --base <base-branch> --title "<title>" --body-file docs/reviews/{scope}/{runId}/pr-draft.md
+```
+
 ---
 
 ## 참고 파일
@@ -121,3 +157,4 @@ gh pr create --base <base-branch> --title "<title>" --body "<body>"
 | [references/type-detection.md](./references/type-detection.md) | PR 유형 판별 규칙 |
 | [references/compatibility-check.md](./references/compatibility-check.md) | Skill 호환성 검사 규칙 |
 | `pr-template.md` (프로젝트 루트) | PR 본문 템플릿 |
+| `docs/reviews/{scope}/{runId}/pr-draft.json` | `--from-draft` 게시 입력 |

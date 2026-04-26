@@ -53,6 +53,7 @@
 반드시 포함:
 
 - `skill`
+- `schemaVersion` (`status-write.ts`가 `1.0`으로 자동 기록)
 - `phase`
 - `scope`
 - `runId`

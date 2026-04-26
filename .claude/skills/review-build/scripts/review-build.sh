@@ -5,6 +5,7 @@ scope=""
 base_ref=""
 mode="committed"
 new_run="false"
+auto_until="concern"
 
 for arg in "$@"; do
   case "$arg" in
@@ -20,13 +21,16 @@ for arg in "$@"; do
     --new-run)
       new_run="true"
       ;;
+    --auto-until=*)
+      auto_until="${arg#*=}"
+      ;;
     *)
       ;;
   esac
 done
 
 if [[ -z "$scope" ]]; then
-  echo "usage: review-build.sh --scope=<scope> [--base-ref=<ref>] [--mode=committed|staged|working-tree] [--new-run]" >&2
+  echo "usage: review-build.sh --scope=<scope> [--base-ref=<ref>] [--mode=committed|staged|working-tree] [--new-run] [--auto-until=concern|blocked|before-pr|never]" >&2
   exit 1
 fi
 
@@ -34,6 +38,14 @@ case "$mode" in
   committed|staged|working-tree) ;;
   *)
     echo "invalid --mode=$mode (expected: committed|staged|working-tree)" >&2
+    exit 1
+    ;;
+esac
+
+case "$auto_until" in
+  concern|blocked|before-pr|never) ;;
+  *)
+    echo "invalid --auto-until=$auto_until (expected: concern|blocked|before-pr|never)" >&2
     exit 1
     ;;
 esac
@@ -100,6 +112,7 @@ generated_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   "baseCommitSha": "$base_commit_sha",
   "headCommitSha": "$head_commit_sha",
   "currentPhase": "phase-1-analyze-changes",
+  "autoUntil": "$auto_until",
   "phaseOrder": [
     "phase-1-analyze-changes",
     "phase-2-code-review",
@@ -113,7 +126,7 @@ generated_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     "$review_build_status"
   ],
   "concerns": [
-    "Phase 1 결과를 확인한 뒤 사용자의 proceed/revise/stop/back 응답이 필요합니다."
+    "Bootstrap only. 이후 gate 여부는 autoUntil 정책과 각 phase status에 따라 결정합니다."
   ]
 }
 EOF
@@ -123,6 +136,7 @@ echo "- scope: $scope"
 echo "- runId: $run_id"
 echo "- reused: $reused"
 echo "- requiresDecision: $requires_decision"
+echo "- autoUntil: $auto_until"
 echo "- output dir: $review_dir"
 echo "- status: $review_build_status"
 

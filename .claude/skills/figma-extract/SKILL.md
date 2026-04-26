@@ -1,6 +1,6 @@
 ---
 name: figma-extract
-description: Figma 디자인을 서브에이전트로 추출하여 docs/specs/에 스펙 파일로 정제. Figma URL 제공 시 또는 디자인 추출 요청 시 사용.
+description: Figma 디자인 추출, Figma URL 분석, 디자인 스펙화, UI 구현 전 스펙 파일 생성이 필요할 때 사용. 서브에이전트가 Figma MCP 응답을 docs/specs/로 정제한다.
 argument-hint: [figma-url]
 allowed-tools: Agent Read Write Edit Bash Glob Grep
 ---

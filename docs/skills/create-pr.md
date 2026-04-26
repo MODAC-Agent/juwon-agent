@@ -1,6 +1,7 @@
 # create-pr Skill
 
-현재 브랜치의 변경을 분석하여 `pr-template.md` 형식의 PR 제목/본문 초안을 생성하는 skill이다.
+현재 브랜치의 변경을 분석하거나 `review-pr-draft` 산출물을 받아 PR 제목/본문 초안을 확인한 뒤,
+사용자 승인 후 GitHub PR을 생성하는 skill이다.
 
 ---
 
@@ -9,6 +10,7 @@
 - PR을 올리기 전에 초안을 준비하고 싶을 때
 - 브랜치 작업이 끝나고 PR 본문을 작성해야 할 때
 - 변경 내용을 정리해서 리뷰용 초안을 만들고 싶을 때
+- `review-build`가 만든 `pr-draft.json`으로 실제 PR을 게시하고 싶을 때
 
 ## 실제 PR 생성 여부
 
@@ -23,6 +25,7 @@
 - 즉, PR 초안은 현재 브랜치에 올라와 있는 커밋들만 기준으로 작성된다
 - working tree의 커밋되지 않은 변경은 PR 초안에 포함되지 않는다
 - 커밋되지 않은 변경이 있으면 warning으로만 표시한다
+- 단, `--from-draft`를 사용하면 diff를 다시 분석하지 않고 draft 파일의 `title`, `body`, `baseRef`를 그대로 사용한다
 
 ---
 
@@ -46,6 +49,15 @@ main → master → develop → dev 순서로 base branch를 추정한다.
 /create-pr develop
 ```
 
+### review-build draft로 PR 생성
+
+```
+/create-pr --from-draft=docs/reviews/{scope}/{runId}/pr-draft.json
+```
+
+이 모드에서는 `review-pr-draft`가 만든 본문을 재작성하지 않는다.
+같은 디렉토리에 `pr-draft.md`가 있으면 `gh pr create --body-file` 입력으로 사용한다.
+
 ---
 
 ## 실행 흐름
@@ -62,6 +74,18 @@ main → master → develop → dev 순서로 base branch를 추정한다.
 사용자: "수정해줘" → 반영 후 다시 제시
 사용자: "올려줘"   → gh pr create 실행 → PR URL 반환
 사용자: "취소"     → 종료
+```
+
+`review-build` 산출물을 게시할 때의 흐름:
+
+```
+/create-pr --from-draft=docs/reviews/{scope}/{runId}/pr-draft.json
+     ↓
+1. pr-draft.json 읽기
+2. title / body / baseRef 확인
+3. 사용자에게 초안 제시
+     ↓
+사용자: "올려줘" → gh pr create 실행 → PR URL 반환
 ```
 
 ---
@@ -188,6 +212,7 @@ docs/skills/create-pr.md             — 사용법 문서
 - uncommitted 변경은 PR 초안에 포함되지 않는다
 - 검증 항목은 실제 확인한 것만 적고, 모르면 `미실행`으로 둔다
 - PR 유형, base branch 등 자동 판별 결과는 `(추정)` 또는 `(inferred)`를 표시한다
+- `--from-draft` 모드에서는 review/coverage 결과가 담긴 본문을 git diff 기준으로 다시 쓰지 않는다
 
 ---
 
@@ -204,4 +229,6 @@ docs/skills/create-pr.md             — 사용법 문서
     └── compatibility-check.md        — 호환성 검사 규칙
 docs/skills/create-pr.md             — 이 문서
 pr-template.md                        — PR 본문 템플릿 (프로젝트 루트)
+docs/skills/skills-overview.md        — 전체 skill 지도와 시퀀스 다이어그램
+docs/skills/review-build-workflow.md  — review-build부터 PR 생성까지의 전체 흐름
 ```
