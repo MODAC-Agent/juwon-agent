@@ -20,7 +20,9 @@
 ### 수정 모드 검증
 
 - `changes/` 디렉토리가 존재하는가
-- `changes/*.md`마다 `대상`, `변경 내용`, `Figma 참조` 섹션이 있는가
+- `reuse-map.md`가 존재하고 대상 코드 / 재사용 후보 / 새로 만들 수 있는 것 판단이 있는가
+- `changes/*.md`마다 `대상`, `재사용 방침`, `변경 내용`, `Figma 참조` 섹션이 있는가
+- `changes/*.md`가 기존 코드와 동일한 전체 UI를 반복하지 않고 변경분만 담는가
 - `tokens-diff.json`이 있다면 `scope`가 있고, `global_candidates` 형식이 유효한가
 
 ### 검증 실패 처리
